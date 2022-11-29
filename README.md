@@ -33,7 +33,7 @@ Dataset: https://www.kaggle.com/datasets/basilb2s/language-detection
 ## **Usage**
 
 ### **Train** [POST]
-Endpoint: `http://127.0.0.1:5000/train`
+Endpoint: `http://localhost:5000/train`
 
 All hyperparameters are optional and, if not set, default values are used. Below is an example of a **body request** with the configurable hyperparameters and their default values:
 
@@ -61,7 +61,7 @@ All hyperparameters are optional and, if not set, default values are used. Below
 <br />
 
 ### **Test** [GET]
-Endpoint: `http://127.0.0.1:5000/test`
+Endpoint: `http://localhost:5000/test`
 
 **Response**
 ```json 
@@ -73,7 +73,7 @@ Endpoint: `http://127.0.0.1:5000/test`
 <br />
 
 ### **Inference** [POST]
-Endpoint: `http://127.0.0.1:5000/predict`
+Endpoint: `http://localhost:5000/predict`
 
 **Request**
 ```json 
@@ -104,7 +104,7 @@ Endpoint: `http://127.0.0.1:5000/predict`
 <br />
 
 ### **Binary to Multi-Class**
-The model is configured to recognize Italian sentence. To switch to Multi-Class configuration change this line in `predict()` method:
+The model is configured to recognize Italian sentence. To switch to Multi-Class configuration change [this](https://github.com/matteomedioli/language-classifier/blob/e7c598386a93d0b6e379089bc70cb9b7cab9328c/src/app.py#L86) line in `predict()` method:
 ```python
 response = 1 if LANG_LOOKUP[label.item()] == "Italian" else 0
 ```
