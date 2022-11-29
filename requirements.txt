@@ -1,6 +1,7 @@
 pandas
 numpy
 torch
+dataclasses-json
 tensorboard
 tqdm
 flask

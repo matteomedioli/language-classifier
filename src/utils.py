@@ -1,12 +1,16 @@
 import torch
+import logging
+import os
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+logger = logging.getLogger(__name__)
 
 def cuda_setup():
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        print("There are %d GPU(s) available." % torch.cuda.device_count())
-        print("We will use the GPU:", torch.cuda.get_device_name(0))
+        logger.info("There are %d GPU(s) available." % torch.cuda.device_count())
+        logger.info("We will use the GPU:", torch.cuda.get_device_name(0))
     else:
-        print("No GPU available, using the CPU instead.")
+        logger.info("No GPU available, using the CPU instead.")
         device = torch.device("cpu")
     return device
 
@@ -14,42 +18,18 @@ def cuda_setup():
 def save_state_dict(save_path, model, optimizer, train, valid, test):
     if save_path == None:
         return
-    state_dict = {"model_state_dict": model.state_dict(),
-                  "optimizer_state_dict": optimizer.state_dict(),
+    state_dict = {"model": model.state_dict(),
+                  "kwargs": model.kwargs,
+                  "optimizer": optimizer.state_dict(),
                   "data": {"train": train, "valid": valid, "test": test}
                   }
+    logger.info("\tSaving model checkpoint...")
     torch.save(state_dict, save_path)
-    print(f"Model saved to ==> {save_path}")
+    logger.info(f"\tModel saved to: {save_path}")
 
-
-def load_state_dict(model, optimizer, load_path="model.pt", device=torch.device("cpu")):
-    if load_path==None:
-        return
-    state_dict = torch.load(load_path, map_location=device)
-    model.load_state_dict(state_dict["model_state_dict"])
-    optimizer.load_state_dict(state_dict["optimizer_state_dict"])
-    data = state_dict["data"]
-    return model, optimizer, data
-
-
-def load_model(model, load_path="model.pt", device=torch.device("cpu")):
-    if load_path==None:
-        return
-    state_dict = torch.load(load_path, map_location=device)
-    model.load_state_dict(state_dict["model_state_dict"])
-    return model
-
-
-def load_optimizer(optimizer, load_path="model.pt", device=torch.device("cpu")):
-    if load_path==None:
-        return
-    state_dict = torch.load(load_path, map_location=device)
-    optimizer.load_state_dict(state_dict["optimizer_state_dict"])
-    return optimizer
-
-
-def load_data(load_path="model.pt", device=torch.device("cpu")):
-    if load_path==None:
-        return
-    state_dict = torch.load(load_path, map_location=device)
-    return state_dict["data"]
+def rollback_training():
+    logger.info(f"\tERROR: clean vocab.pt and model.pt")
+    if os.path.exists("vocab.pt"):
+        os.system("del vocab.pt")
+    if os.path.exists("model.pt"):
+        os.system("del model.pt")

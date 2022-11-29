@@ -1,4 +1,3 @@
 runs
 __pycache__
-vocab.pt
-model.pt
+*.pt

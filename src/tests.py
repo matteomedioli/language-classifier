@@ -5,9 +5,9 @@ import numpy as np
 from data import preprocessing, CLS, SEP, PAD
 
 @pytest.mark.preprocessing
-@pytest.mark.parametrize('file_name', ["Language_Detection.csv"])
+@pytest.mark.parametrize('file_name', ["./data/Language_Detection.csv"])
 @pytest.mark.parametrize('max_len', [3, 16, 100])
-def test_post_preprocessing_sentence_lenght(file_name, max_len):
+def test_post_preprocessing(file_name, max_len):
     # Arrange
     source = pd.read_csv(file_name)
     # Act

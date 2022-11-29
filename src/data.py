@@ -17,6 +17,7 @@ LANG = ['Tamil', 'English', 'Sweedish',
         'Danish', 'Portugeese', 'French', 
         'Spanish', 'Hindi']
 LANG_DICT = {x: i for i, x in enumerate(LANG)}
+LANG_LOOKUP = {v:k for k,v in LANG_DICT.items()}
 
 class SentenceLanguageDataset(Dataset):
     def __init__(self, dataframe):
@@ -41,6 +42,7 @@ def info(df):
     print("Max  sentence length: ", df["Text"].str.len().max())
     print("Min  sentence length: ", df["Text"].str.len().min())
     print()
+
 
 def get_vocab(text_column):
     d = {vocab: i+4 for i, vocab in enumerate(set([x for y in text_column for x in y]))}
@@ -132,8 +134,6 @@ def preprocessing(df, input_dim=16):
     df_clean["Text"] = df_clean["Text"].apply(lambda sentence: [mask[item] for item in sentence])
     # Categorical Language column to 
     df_clean["Language"] = df_clean["Language"].map(LANG_DICT)
-    df_clean['Language'] = pd.Series(df_clean['Language'],dtype=pd.Int64Dtype())
-    print(df_clean["Language"])
     # Extract senteces that exceed max_len (-2 due CLS and SEP)
     max_len = input_dim - 2
     df_exceed = df_clean.loc[np.array(list(map(len,df_clean["Text"].values)))>max_len]
@@ -155,7 +155,7 @@ def preprocessing(df, input_dim=16):
     return df_clean, vocab
 
 
-def tokenize(sentences, vocab, input_dim):
+def tokenize(sentences, vocab, input_dim=8):
     tokenized_sentences = []
     for sentence in sentences:
         sentence = sentence.lower()
