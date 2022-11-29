@@ -70,6 +70,8 @@ Endpoint: `http://127.0.0.1:5000/test`
     }
 ```
 
+<br />
+
 ### **Inference** [POST]
 Endpoint: `http://127.0.0.1:5000/predict`
 
@@ -88,14 +90,14 @@ Endpoint: `http://127.0.0.1:5000/predict`
 
 <br />
 
-### **TensorBoard** [GET]
+### **TensorBoard**
 
     docker cp language-classifier:/app/runs docker_runs
     tensorboard --logdir docker_runs
 
 <br />
 
-### **Preprocessing Automated Tests** [GET]
+### **Preprocessing Automated Tests**
 
     pytest src/tests.py
 
