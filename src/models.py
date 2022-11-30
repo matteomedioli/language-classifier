@@ -14,6 +14,6 @@ class LanguageClassifierModel(nn.Module):
         nn.init.xavier_uniform_(self.fc.weight)
         self.fc.bias.data.zero_()
 
-    def forward(self, text):
-        embedded = self.embedding(text)
+    def forward(self, text, offsets):
+        embedded = self.embedding(text, offsets)
         return self.fc(embedded)

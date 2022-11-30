@@ -8,7 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 
 CLS = "[CLS]"
 SEP = "[SEP]"
-PAD = "[PAD]"
 UKN = "[UKN]"
 LANG = ['Tamil', 'English', 'Sweedish', 
         'Malayalam', 'Russian', 'Arabic',
@@ -48,8 +47,7 @@ def get_vocab(text_column):
     d = {vocab: i+4 for i, vocab in enumerate(set([x for y in text_column for x in y]))}
     d[CLS] = 0
     d[SEP] = 1
-    d[PAD] = 2
-    d[UKN] = 3
+    d[UKN] = 2
     return d
 
 
@@ -67,15 +65,27 @@ def create_data_split(data, test_perc=0.1, val_perc=0.2):
     return train_mask, val_mask, test_mask
 
 
+def collate_batch(batch):
+    label_list, text_list, offsets = [], [], [0]
+    for (_text, _label) in batch:
+         label_list.append(_label)
+         processed_text = _text
+         text_list.append(processed_text)
+         offsets.append(processed_text.size(0))
+    label_list = torch.tensor(label_list, dtype=torch.int64)
+    offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+    text_list = torch.cat(text_list)
+    return text_list, label_list, offsets
+
+
 def get_dataloader(df, batch_size=8, shuffle=True):
     train_mask, val_mask, test_mask = create_data_split(df)
     train = df[train_mask.tolist()]
     valid = df[val_mask.tolist()]
     test = df[test_mask.tolist()]
-    return DataLoader(SentenceLanguageDataset(train), batch_size=batch_size, shuffle=shuffle) \
-          ,DataLoader(SentenceLanguageDataset(valid), batch_size=batch_size, shuffle=shuffle) \
-          ,DataLoader(SentenceLanguageDataset(test), batch_size=batch_size, shuffle=shuffle) 
-
+    return DataLoader(SentenceLanguageDataset(train), batch_size=batch_size, shuffle=shuffle, collate_fn=collate_batch) \
+          ,DataLoader(SentenceLanguageDataset(valid), batch_size=batch_size, shuffle=shuffle, collate_fn=collate_batch) \
+          ,DataLoader(SentenceLanguageDataset(test), batch_size=batch_size, shuffle=shuffle, collate_fn=collate_batch) 
 
 def clean_function(text):
     text = re.sub(r'[\([{})\]!@#$,"%^*?.:;~`0-9]', " ", text)
@@ -145,8 +155,6 @@ def preprocessing(df, input_dim=16):
     df_clean["Text"] = df_clean["Text"].apply(lambda sentence: [CLS] + sentence + [SEP])
     # Add new padded long sentences to source dataframe
     df_clean = pd.concat([df_clean, df_new])
-    # Padding sentences where len(sentence)<max_len
-    df_clean["Text"] = df_clean["Text"].apply(lambda sentence: sentence + [PAD for _ in range(input_dim-len(sentence))])
     # Words to IDs using vocab
     df_clean["Text"] = df_clean["Text"].apply(lambda sentence: [vocab[x] for x in sentence])
     # IDs list to tensor
@@ -155,14 +163,13 @@ def preprocessing(df, input_dim=16):
     return df_clean, vocab
 
 
-def tokenize(sentences, vocab, input_dim=8):
+def tokenize(sentences, vocab):
     tokenized_sentences = []
     for sentence in sentences:
         sentence = sentence.lower()
         sentence = clean_function(sentence)
         sentence = sentence.split()
         sentence = [CLS]+sentence+[SEP]
-        sentence = sentence + [PAD for _ in range(input_dim-len(sentence))]
         sentence = [vocab[word] if word in vocab else vocab[UKN] for word in sentence]
         tokenized_sentences.append(sentence)
     return torch.tensor(tokenized_sentences)

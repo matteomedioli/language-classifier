@@ -44,10 +44,10 @@ class Trainer:
         accuracy = None
         for epoch in range(1, self.epochs + 1):
             self.logger.info("-"*21+f"EPOCH {epoch}"+"-"*21)
-            for i,(sentence, language) in enumerate(self.train_loader):
+            for i,(sentence, language, offsets) in enumerate(self.train_loader):
                 self.model.train()
                 self.optimizer.zero_grad()
-                predicted_label = self.model(sentence)
+                predicted_label = self.model(sentence, offsets)
                 loss = self.criterion(predicted_label, language)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
@@ -80,8 +80,8 @@ class Trainer:
         self.model.eval()
         total_acc, total_count = 0, 0
         with torch.no_grad():
-            for sentence, language in self.valid_loader:
-                predicted_label = self.model(sentence)
+            for sentence, language, offsets in self.valid_loader:
+                predicted_label = self.model(sentence, offsets)
                 val_loss = self.criterion(predicted_label, language)
                 self.writer.add_scalar('Validation Loss', val_loss, self.global_step)
                 total_acc += (predicted_label.argmax(1) == language).sum().item()

@@ -60,8 +60,8 @@ def test():
         model.eval()
         total_acc, total_count = 0, 0
         with torch.no_grad():
-            for sentence, language in tqdm(data["test"], desc="Testing..."):
-                predicted_label = model(sentence)
+            for sentence, language, offsets in tqdm(data["test"], desc="Testing..."):
+                predicted_label = model(sentence, offsets)
                 total_acc += (predicted_label.argmax(1) == language).sum().item()
                 total_count += language.size(0)
         return {"test_accuracy":total_acc/total_count}
@@ -81,7 +81,7 @@ def predict():
         model.load_state_dict(state_dict["model"])
         model.eval()
         input = tokenize([sentence], vocab)
-        predicted_labels = model(input)
+        predicted_labels = model(input, None)
         label = torch.argmax(predicted_labels, dim=1)
         response = 1 if LANG_LOOKUP[label.item()] == "Italian" else 0
         return {"class": response}
