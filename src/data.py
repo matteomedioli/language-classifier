@@ -19,6 +19,7 @@ LANG_DICT = {x: i for i, x in enumerate(LANG)}
 LANG_LOOKUP = {v:k for k,v in LANG_DICT.items()}
 
 class SentenceLanguageDataset(Dataset):
+    # Wrapper to handle pd.DataFrame as torch.Dataset 
     def __init__(self, dataframe):
         self.text = dataframe["Text"]
         self.language = dataframe["Language"]
@@ -44,6 +45,7 @@ def info(df):
 
 
 def get_vocab(text_column):
+    # create vocabulary from text dataframe column
     d = {vocab: i+4 for i, vocab in enumerate(set([x for y in text_column for x in y]))}
     d[CLS] = 0
     d[SEP] = 1
@@ -54,9 +56,11 @@ def get_vocab(text_column):
 def create_data_split(data, test_perc=0.1, val_perc=0.2):
     num_test = round(len(data) * test_perc)
     num_val = round(len(data) * val_perc)
+    # init mask with 0 (False)
     train_mask = torch.zeros(len(data), dtype=torch.bool)
     val_mask = torch.zeros(len(data), dtype=torch.bool)
     test_mask = torch.zeros(len(data), dtype=torch.bool)
+    # index random permutation
     perm = torch.randperm(len(data))
     t = int(len(data)) - (num_val + num_test)
     train_mask[perm[:t]] = True
@@ -66,19 +70,22 @@ def create_data_split(data, test_perc=0.1, val_perc=0.2):
 
 
 def collate_batch(batch):
+    # custom collate function to generate offsets in iter DataLoader
     label_list, text_list, offsets = [], [], [0]
-    for (_text, _label) in batch:
-         label_list.append(_label)
-         processed_text = _text
-         text_list.append(processed_text)
-         offsets.append(processed_text.size(0))
+    for (text, label) in batch:
+         label_list.append(label)
+         text_list.append(text)
+         offsets.append(text.size(0))
     label_list = torch.tensor(label_list, dtype=torch.int64)
+    # compute offset for each element in batch as cumulative sum
     offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+    # concatenate all sentence in the batch
     text_list = torch.cat(text_list)
     return text_list, label_list, offsets
 
 
 def get_dataloader(df, batch_size=8, shuffle=True):
+    # generate torch.DataLoader from pd.DataFrame
     train_mask, val_mask, test_mask = create_data_split(df)
     train = df[train_mask.tolist()]
     valid = df[val_mask.tolist()]
@@ -88,6 +95,7 @@ def get_dataloader(df, batch_size=8, shuffle=True):
           ,DataLoader(SentenceLanguageDataset(test), batch_size=batch_size, shuffle=shuffle, collate_fn=collate_batch) 
 
 def clean_function(text):
+    # Remove all special character and struct (http, @gmail, whitespaces etc)
     text = re.sub(r'[\([{})\]!@#$,"%^*?.:;~`0-9]', " ", text)
     text = text.lower()
     text = re.sub("http\S+\s*", " ", text)
@@ -101,11 +109,13 @@ def clean_function(text):
 
 
 def divide_chunks(l, n):
+    # split a list in sublist of len=n
     for i in range(0, len(l), n):
         yield (l[i:i + n])
 
 
 def expand(df, max_len):
+    # truncate sentence where len>max_len and return extended df
     rows = df["Text"].apply(lambda x: list(divide_chunks(x, max_len)))
     new = []
     for x, y, z in zip(rows, df["Language"], df["Text"]):
@@ -115,6 +125,7 @@ def expand(df, max_len):
 
 
 def less_frequent_word(words, threshold = 1):
+    # retrieve all the words with frequency < threshold 
     bow = set(words)
     counter = dict((word,0) for word in bow)
     for word in words:
@@ -136,7 +147,7 @@ def preprocessing(df, input_dim=16):
     # Store vocab
     vocab = get_vocab(df_clean["Text"])
     torch.save(vocab, "vocab.pt")
-    # UKN
+    # Add UKN to avoid Out of Dictionary during inference
     words = [x for y in df_clean["Text"] for x in y]
     mask = {value: (value if random.uniform(0, 1) > 0.5 else UKN) for value in less_frequent_word(words)}
     for word in words:
@@ -164,6 +175,7 @@ def preprocessing(df, input_dim=16):
 
 
 def tokenize(sentences, vocab):
+    # create tokenized sentence based on vocab
     tokenized_sentences = []
     for sentence in sentences:
         sentence = sentence.lower()

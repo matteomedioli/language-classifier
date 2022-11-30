@@ -46,10 +46,12 @@ class Trainer:
             self.logger.info("-"*21+f"EPOCH {epoch}"+"-"*21)
             for i,(sentence, language, offsets) in enumerate(self.train_loader):
                 self.model.train()
+                # set gradient of optim tensor to 0
                 self.optimizer.zero_grad()
                 predicted_label = self.model(sentence, offsets)
                 loss = self.criterion(predicted_label, language)
                 loss.backward()
+                # gradient clipping
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
                 self.optimizer.step()
                 self.writer.add_scalar('Learning Rate', self.optimizer.param_groups[0]["lr"], self.global_step)

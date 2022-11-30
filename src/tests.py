@@ -14,8 +14,6 @@ def test_post_preprocessing(file_name, max_len):
     target, vocab = preprocessing(source, input_dim=max_len)
     first_words = target["Text"].apply(lambda x: x[0])
     # Assert
-    # All sentences pad to max_len
-    assert (target['Text'].str.len() == max_len).all()
     # All sentences start with CLS
     assert (first_words==vocab[CLS]).all()
     # All sentences end with SEP
