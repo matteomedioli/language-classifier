@@ -46,7 +46,7 @@ def info(df):
 
 def get_vocab(text_column):
     # create vocabulary from text dataframe column
-    d = {vocab: i+4 for i, vocab in enumerate(set([x for y in text_column for x in y]))}
+    d = {vocab: i+3 for i, vocab in enumerate(set([x for y in text_column for x in y]))}
     d[CLS] = 0
     d[SEP] = 1
     d[UKN] = 2
